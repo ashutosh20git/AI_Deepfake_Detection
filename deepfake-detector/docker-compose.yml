@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-deepfake}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-deepfake}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deepfake} -d ${POSTGRES_DB:-deepfake}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - deepfake-net
+
+  ml-service:
+    build: ./python-service
+    container_name: ml-service
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    expose:
+      - "8000"
+    networks:
+      - deepfake-net
+
+  node-app:
+    build: ./node-app
+    container_name: node-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=${PORT}
+      - ML_SERVICE_URL=${ML_SERVICE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - OFFLINE_MODE=${OFFLINE_MODE}
+      - FIREBASE_SERVICE_ACCOUNT_PATH=${FIREBASE_SERVICE_ACCOUNT_PATH}
+      - HCAPTCHA_SECRET=${HCAPTCHA_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./secrets:/app/secrets
+    networks:
+      - deepfake-net
+
+networks:
+  deepfake-net:
+
+volumes:
+  pgdata:
