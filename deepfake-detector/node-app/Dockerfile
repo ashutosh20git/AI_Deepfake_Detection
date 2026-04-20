@@ -1,9 +1,16 @@
 FROM node:20-alpine
 WORKDIR /app
+
+RUN apk add --no-cache openssl openssl-dev
+
 COPY package*.json ./
-# user required npm ci, but using npm install so it works without lockfile
+COPY prisma ./prisma
 RUN npm install
-COPY . .
 RUN npx prisma generate
+
+COPY . .
+
+RUN chmod +x entrypoint.sh
+
 EXPOSE 3000
-CMD ["node", "src/server.js"]
+CMD ["./entrypoint.sh"]

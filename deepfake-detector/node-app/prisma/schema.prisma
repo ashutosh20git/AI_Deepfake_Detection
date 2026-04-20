@@ -6,3 +6,106 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum Role {
+  ADMIN
+  ANALYST
+  FIELD_OPERATIVE
+}
+
+enum RiskLevel {
+  HIGH_RISK
+  MEDIUM_SUSPICION
+  AUTHENTIC
+}
+
+enum ReviewStatus {
+  PENDING
+  REVIEWED
+  USED_FOR_RETRAINING
+}
+
+model User {
+  id                  String     @id @default(cuid())
+  email               String     @unique
+  firebaseUid         String?    @unique          // null if user is offline-only
+  role                Role       @default(ANALYST)
+  // Offline fallback fields:
+  offlinePasswordHash String?                     // bcrypt
+  offlineMfaSecret    String?                     // TOTP secret
+  offlineMfaEnabled   Boolean    @default(false)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  analyses            Analysis[]
+  chatSessions        ChatSession[]
+  auditLogs           AuditLog[]
+}
+
+model Analysis {
+  id                   String     @id @default(cuid())
+  userId               String
+  user                 User       @relation(fields: [userId], references: [id])
+  videoFilename        String
+  frameScores          Float[]
+  aggregatedConfidence Float
+  scoreStd             Float
+  framesAnalyzed       Int
+  facesDetected        Int
+  riskLevel            RiskLevel
+  needsReview          Boolean    @default(false)
+  reasoning            String
+  gradcamPath          String
+  createdAt            DateTime   @default(now())
+
+  reviewQueueItem      ReviewQueueItem?
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ReviewQueueItem {
+  id          String        @id @default(cuid())
+  analysisId  String        @unique
+  analysis    Analysis      @relation(fields: [analysisId], references: [id])
+  status      ReviewStatus  @default(PENDING)
+  batchId     String?
+  createdAt   DateTime      @default(now())
+
+  @@index([status])
+}
+
+model ChatSession {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id])
+  title      String?
+  createdAt  DateTime      @default(now())
+  messages   ChatMessage[]
+
+  @@index([userId])
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id])
+  role        String      // "user" | "model"
+  content     String      @db.Text
+  createdAt   DateTime    @default(now())
+
+  @@index([sessionId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String   // "LOGIN", "ANALYZE", "MFA_SETUP", etc
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}

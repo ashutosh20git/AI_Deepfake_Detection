@@ -3,6 +3,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import logger from './utils/logger.js';
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
+import apiRouter from './routes/api.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
@@ -18,6 +20,8 @@ app.use((req, res, next) => {
 });
 
 app.use('/health', healthRouter);
+app.use('/auth', authRouter);
+app.use('/api', apiRouter);
 
 app.use(errorHandler);
 
