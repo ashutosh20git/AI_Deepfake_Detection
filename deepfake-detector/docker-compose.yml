@@ -29,6 +29,8 @@ services:
       start_period: 60s
     expose:
       - "8000"
+    volumes:
+      - ./retraining-data:/app/retraining-data
     networks:
       - deepfake-net
 
@@ -56,6 +58,7 @@ services:
       - ./uploads:/app/uploads
       - ./logs:/app/logs
       - ./secrets:/app/secrets
+      - ./retraining-data:/app/retraining-data
     networks:
       - deepfake-net
 

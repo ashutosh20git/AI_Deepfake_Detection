@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEEPFAKE.DETECT — Authentication</title>
+
+  <!-- Preconnect and Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'monospace'],
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+<body class="bg-zinc-950 text-zinc-50 font-sans antialiased min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+  <div class="bg-radial-blob"></div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
+
+  <main class="w-full max-w-[440px] px-6 relative z-10 page-mount">
+    <div class="flex flex-col items-center mb-8">
+      <svg class="h-10 w-10 text-cyan-500 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      <div class="font-mono font-bold tracking-wider text-sm text-zinc-50">DEEPFAKE.DETECT</div>
+    </div>
+
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-8 shadow-2xl shadow-black/50 w-full mb-4 relative overflow-hidden">
+      <div class="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-4">SECURE ACCESS</div>
+      <h1 class="text-2xl font-mono font-semibold tracking-tight text-white mb-2">Authentication</h1>
+      <p class="text-zinc-400 text-sm mb-6">Verify your identity to continue</p>
+      
+      <form id="login-form" class="space-y-4">
+        <div>
+          <input type="email" id="email" required placeholder="Email address" class="w-full bg-zinc-950 border border-zinc-800 rounded-md px-4 py-2.5 text-zinc-50 placeholder-zinc-600 font-mono text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"/>
+        </div>
+        <div>
+          <input type="password" id="password" required placeholder="Password" class="w-full bg-zinc-950 border border-zinc-800 rounded-md px-4 py-2.5 text-zinc-50 placeholder-zinc-600 font-mono text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"/>
+        </div>
+        
+        <!-- hCaptcha mock fallback styled appropriately -->
+        <div class="bg-zinc-950 border border-zinc-800 rounded-md p-3 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+             <input type="checkbox" id="mock-captcha" class="w-5 h-5 accent-cyan-500 bg-zinc-900 border-zinc-700 rounded cursor-pointer" required/>
+             <span class="text-zinc-400 text-sm">I am human</span>
+          </div>
+          <svg class="h-6 w-6 text-zinc-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+
+        <button type="submit" id="submit-btn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono font-semibold px-5 py-2.5 rounded-md shadow-lg shadow-cyan-500/20 transition-all mt-2 flex items-center justify-center">
+          AUTHENTICATE &rarr;
+        </button>
+      </form>
+      
+      <div class="mt-6 text-center">
+        <a href="/register.html" class="text-sm text-zinc-500 hover:text-cyan-500 font-sans transition-colors">Don't have an account? Request access</a>
+      </div>
+    </div>
+    
+    <div class="text-center">
+        <span class="text-xs text-zinc-600 font-mono tracking-widest uppercase">v1.0.0 • Edge-Deployed • Offline-Capable</span>
+    </div>
+  </main>
+
+  <script type="module">
+    import { loginWithEmail } from './js/auth.js';
+    import { showToast } from './js/components.js';
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const email = document.getElementById('email').value;
+      const pwd = document.getElementById('password').value;
+      
+      btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-zinc-950 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> AUTHENTICATING...`;
+      btn.disabled = true;
+
+      try {
+        await loginWithEmail(email, pwd);
+        window.location.href = '/dashboard.html';
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.innerHTML = 'AUTHENTICATE &rarr;';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

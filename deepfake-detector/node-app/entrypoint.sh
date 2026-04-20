@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+mkdir -p /app/uploads/gradcams
+
 echo "Deploying database migrations..."
 npx prisma migrate deploy
 
