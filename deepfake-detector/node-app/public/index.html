@@ -4,8 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DEEPFAKE.DETECT</title>
-  <meta http-equiv="refresh" content="0; url=/login.html" />
+  <script>
+    const token = localStorage.getItem("deepfake_token");
+    window.location.replace(token ? "/dashboard.html" : "/login.html");
+  </script>
 </head>
-<body class="bg-zinc-950 text-zinc-50">
+<body class="bg-zinc-950 text-zinc-50 font-sans antialiased min-h-screen">
+  <div class="noise-overlay fixed inset-0 -z-10"></div>
 </body>
 </html>

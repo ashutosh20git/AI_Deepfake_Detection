@@ -3,11 +3,14 @@ import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import { fileTypeFromBuffer } from 'file-type';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { analyzeVideo } from '../services/mlService.js';
 import { classifyRisk } from '../services/agenticDecision.js';
 import prisma from '../utils/db.js';
 import logger from '../utils/logger.js';
+import { analyzeLimiter, adminLimiter } from '../middleware/rateLimits.js';
+import { logEvent, AUDIT_ACTIONS } from '../services/auditLog.js';
 
 const router = express.Router();
 
@@ -34,7 +37,9 @@ const upload = multer({
   }
 });
 
-router.post('/analyze', requireAuth, upload.single('video'), async (req, res) => {
+const ALLOWED_MAGIC_MIME_TYPES = new Set(['video/mp4', 'video/quicktime', 'video/x-msvideo']);
+
+router.post('/analyze', requireAuth, analyzeLimiter, upload.single('video'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No video file provided.' });
   }
@@ -44,6 +49,27 @@ router.post('/analyze', requireAuth, upload.single('video'), async (req, res) =>
   const baseFilename = path.parse(req.file.filename).name;
 
   try {
+    await logEvent(req, AUDIT_ACTIONS.ANALYZE_STARTED, {
+      uploadFilename: req.file.filename,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+    });
+
+    const fileBuffer = fs.readFileSync(filePath);
+    const magicHeader = fileBuffer.subarray(0, 4100);
+    const fileType = await fileTypeFromBuffer(magicHeader);
+    const fileStats = fs.statSync(filePath);
+
+    if (fileStats.size > 50 * 1024 * 1024) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ error: 'Invalid file format' });
+    }
+
+    if (!fileType || !ALLOWED_MAGIC_MIME_TYPES.has(fileType.mime)) {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ error: 'Invalid file format' });
+    }
+
     const mlResult = await analyzeVideo(filePath);
     const decision = classifyRisk(mlResult);
 
@@ -80,12 +106,11 @@ router.post('/analyze', requireAuth, upload.single('video'), async (req, res) =>
       });
     }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: req.user.id,
-        action: 'ANALYZE',
-        metadata: { analysisId: newAnalysis.id }
-      }
+    await logEvent(req, AUDIT_ACTIONS.ANALYZE_COMPLETED, {
+      analysisId: newAnalysis.id,
+      riskLevel: decision.riskLevel,
+      confidence: decision.confidence,
+      needsReview: decision.needsReview,
     });
 
     res.json({
@@ -103,6 +128,10 @@ router.post('/analyze', requireAuth, upload.single('video'), async (req, res) =>
 
   } catch (error) {
     logger.error(`Analysis failed: ${error.message}`);
+    await logEvent(req, AUDIT_ACTIONS.ANALYZE_FAILED, {
+      uploadFilename: req.file?.filename,
+      error: error.message,
+    });
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
@@ -156,6 +185,8 @@ router.get('/analyses/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
+    await logEvent(req, AUDIT_ACTIONS.ANALYSIS_VIEWED, { analysisId: analysis.id });
+
     res.json({
       ...analysis,
       confidence: analysis.aggregatedConfidence,
@@ -167,8 +198,14 @@ router.get('/analyses/:id', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/admin/review-queue', requireAuth, requireRole('ADMIN', 'ANALYST'), async (req, res) => {
+router.get(
+  '/admin/review-queue',
+  requireAuth,
+  adminLimiter,
+  requireRole('ADMIN', 'ANALYST'),
+  async (req, res) => {
   try {
+    await logEvent(req, AUDIT_ACTIONS.ADMIN_QUEUE_VIEWED, {});
     const items = await prisma.reviewQueueItem.findMany({
       where: { status: 'PENDING' },
       include: {
@@ -181,6 +218,7 @@ router.get('/admin/review-queue', requireAuth, requireRole('ADMIN', 'ANALYST'), 
     logger.error(`Error fetching review queue: ${error.message}`);
     res.status(500).json({ error: 'Failed to fetch review queue.' });
   }
-});
+}
+);
 
 export default router;

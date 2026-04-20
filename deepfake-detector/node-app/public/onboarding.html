@@ -1,103 +1,102 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DEEPFAKE.DETECT — Setup MFA</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEEPFAKE.DETECT — Onboarding</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="/config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: { fontFamily: { mono: ['JetBrains Mono', 'monospace'], sans: ['Inter', 'system-ui', 'sans-serif'] } } }
-    }
-  </script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { mono: ["JetBrains Mono", "monospace"], sans: ["Inter", "system-ui", "sans-serif"] } } } };</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="/css/custom.css">
 </head>
-<body class="bg-zinc-950 text-zinc-50 font-sans antialiased min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-  <div class="bg-radial-blob"></div>
-  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
-
-  <main class="w-full max-w-[560px] px-6 relative z-10 page-mount">
-    <div class="text-center font-mono text-xs text-zinc-500 mb-8 tracking-widest flex items-center justify-center space-x-4">
-      <span class="text-cyan-500">01 ——●——</span> <span>02 ——○——</span> <span>SET RECOVERY &rarr; VERIFY MFA</span>
-    </div>
-
-    <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-8 shadow-2xl shadow-black/50 w-full mb-4">
-      <div id="step-1">
-        <h1 class="text-2xl font-mono font-semibold tracking-tight text-white mb-2">Set Recovery Password</h1>
-        <p class="text-zinc-400 text-sm mb-6">Create an offline recovery key. Requires high entropy.</p>
-        
-        <input type="password" id="recovery-pwd" class="w-full bg-zinc-950 border border-zinc-800 rounded-md px-4 py-2.5 text-zinc-50 font-mono text-sm focus:border-cyan-500 focus:outline-none mb-3" placeholder="Enter recovery key" />
-        <div class="flex gap-2 mb-6">
-            <div class="h-2 flex-1 rounded bg-cyan-500"></div>
-            <div class="h-2 flex-1 rounded bg-cyan-500/30"></div>
-            <div class="h-2 flex-1 rounded bg-cyan-500/30"></div>
-            <div class="h-2 flex-1 rounded bg-cyan-500/30"></div>
-        </div>
-
-        <button id="btn-next" class="w-full bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono font-semibold px-5 py-2.5 rounded-md shadow-lg shadow-cyan-500/20 transition-all">
-          CONTINUE &rarr;
-        </button>
+<body class="bg-zinc-950 text-zinc-50 font-sans antialiased min-h-screen flex items-center justify-center relative">
+  <div class="fixed inset-0 -z-20 noise-overlay"></div>
+  <div class="absolute -right-20 -top-20 h-[600px] w-[600px] rounded-full bg-cyan-500/5 blur-3xl -z-10"></div>
+  <main class="w-full max-w-2xl px-6 opacity-0 translate-y-1 transition-all duration-200">
+    <div class="space-y-6">
+      <div class="text-center text-xs font-mono uppercase tracking-widest text-zinc-500">
+        <span id="progress-indicator">01 ——●—— 02 ——○——</span>
+        <p class="mt-2">SET RECOVERY → VERIFY MFA</p>
       </div>
-
-      <div id="step-2" class="hidden">
-        <h1 class="text-2xl font-mono font-semibold tracking-tight text-white mb-2">Secure Device</h1>
-        <p class="text-zinc-400 text-sm mb-6">Scan QR code via authenticator and enter 6-digit PIN.</p>
-        
-        <div class="flex justify-center mb-6">
-           <div class="bg-white p-4 rounded border-2 border-cyan-500 shadow-lg shadow-cyan-500/20">
-              <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xMCAxMGg0MHY0MEgxMHptNTAgMGg0MHY0MEg2MHptNTAgMGg0MHY0MGgtNDB6TTEwIDYwaDQwdjQwSDEwem0xMDAgMGg0MHY0MGgtNDB6TTEwIDExMGg0MHY0MEgxMHptNTAgMGg0MHY0MEg2MHptNTAgMGg0MHY0MGgtNDB6IiBmaWxsPSIjMDAwIi8+PC9zdmc+" alt="QR Mock" width="150" height="150">
-           </div>
+      <section class="border border-zinc-800 bg-zinc-900 rounded-lg p-8 shadow-2xl shadow-black/50">
+        <div id="step-one" class="space-y-6">
+          <h1 class="text-2xl font-mono font-semibold tracking-tight">Set Recovery Password</h1>
+          <div class="space-y-3">
+            <input id="recovery-password" type="password" placeholder="Create recovery password" class="w-full bg-zinc-950 border border-zinc-800 rounded-md px-4 py-2.5 text-zinc-50 placeholder-zinc-600 font-mono text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20">
+            <div class="grid grid-cols-4 gap-2">
+              <div class="h-2 rounded bg-zinc-800 strength-segment"></div>
+              <div class="h-2 rounded bg-zinc-800 strength-segment"></div>
+              <div class="h-2 rounded bg-zinc-800 strength-segment"></div>
+              <div class="h-2 rounded bg-zinc-800 strength-segment"></div>
+            </div>
+          </div>
+          <button id="continue-btn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono font-semibold px-5 py-2.5 rounded-md shadow-lg shadow-cyan-500/20 text-sm transition-all">CONTINUE →</button>
         </div>
-
-        <div class="flex justify-center gap-2 mb-6" id="otp-inputs">
-           <input type="text" maxlength="1" class="w-12 h-14 text-center font-mono text-2xl bg-zinc-950 border border-zinc-800 rounded focus:border-cyan-500 focus:outline-none"/>
-           <input type="text" maxlength="1" class="w-12 h-14 text-center font-mono text-2xl bg-zinc-950 border border-zinc-800 rounded focus:border-cyan-500 focus:outline-none"/>
-           <input type="text" maxlength="1" class="w-12 h-14 text-center font-mono text-2xl bg-zinc-950 border border-zinc-800 rounded focus:border-cyan-500 focus:outline-none"/>
-           <span class="text-zinc-600 flex items-center">-</span>
-           <input type="text" maxlength="1" class="w-12 h-14 text-center font-mono text-2xl bg-zinc-950 border border-zinc-800 rounded focus:border-cyan-500 focus:outline-none"/>
-           <input type="text" maxlength="1" class="w-12 h-14 text-center font-mono text-2xl bg-zinc-950 border border-zinc-800 rounded focus:border-cyan-500 focus:outline-none"/>
-           <input type="text" maxlength="1" class="w-12 h-14 text-center font-mono text-2xl bg-zinc-950 border border-zinc-800 rounded focus:border-cyan-500 focus:outline-none"/>
+        <div id="step-two" class="hidden space-y-6">
+          <h1 class="text-2xl font-mono font-semibold tracking-tight">Verify MFA</h1>
+          <div class="border border-cyan-500/40 bg-zinc-950 rounded-lg p-6 flex justify-center">
+            <img id="qr-code" alt="MFA QR Code" class="h-44 w-44 rounded-md border border-zinc-800" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNzYiIGhlaWdodD0iMTc2IiB2aWV3Qm94PSIwIDAgMTc2IDE3NiI+PHJlY3Qgd2lkdGg9IjE3NiIgaGVpZ2h0PSIxNzYiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSIxNiIgeT0iMTYiIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIvPjxyZWN0IHg9IjExMiIgeT0iMTYiIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIvPjxyZWN0IHg9IjE2IiB5PSIxMTIiIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIvPjwv c3ZnPg==">
+          </div>
+          <div class="grid grid-cols-6 gap-2">
+            <input maxlength="1" class="otp-digit bg-zinc-950 border border-zinc-800 rounded-md h-12 text-center font-mono">
+            <input maxlength="1" class="otp-digit bg-zinc-950 border border-zinc-800 rounded-md h-12 text-center font-mono">
+            <input maxlength="1" class="otp-digit bg-zinc-950 border border-zinc-800 rounded-md h-12 text-center font-mono">
+            <input maxlength="1" class="otp-digit bg-zinc-950 border border-zinc-800 rounded-md h-12 text-center font-mono">
+            <input maxlength="1" class="otp-digit bg-zinc-950 border border-zinc-800 rounded-md h-12 text-center font-mono">
+            <input maxlength="1" class="otp-digit bg-zinc-950 border border-zinc-800 rounded-md h-12 text-center font-mono">
+          </div>
+          <button id="verify-btn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono font-semibold px-5 py-2.5 rounded-md shadow-lg shadow-cyan-500/20 text-sm transition-all">VERIFY & CONTINUE</button>
         </div>
-
-        <button id="btn-finish" class="w-full bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-mono font-semibold px-5 py-2.5 rounded-md shadow-lg shadow-cyan-500/20 transition-all">
-          VERIFY & DASHBOARD
-        </button>
-      </div>
+      </section>
     </div>
   </main>
-
   <script type="module">
-    import { showToast } from './js/components.js';
-
-    document.getElementById('btn-next').addEventListener('click', () => {
-      document.getElementById('step-1').classList.add('hidden');
-      document.getElementById('step-2').classList.remove('hidden');
-      document.querySelector('.text-cyan-500').className = ''; // remove current styling from steps
-      // Mock step visual update
+    import { setupRecoveryPassword, verifyRecoveryMfa } from "/js/auth.js";
+    import { showToast } from "/js/components.js";
+    const pwdInput = document.getElementById("recovery-password");
+    const segments = [...document.querySelectorAll(".strength-segment")];
+    pwdInput.addEventListener("input", () => {
+      const pwd = pwdInput.value;
+      const score = [pwd.length >= 8, /[A-Z]/.test(pwd), /[0-9]/.test(pwd), /[^A-Za-z0-9]/.test(pwd)].filter(Boolean).length;
+      segments.forEach((segment, idx) => {
+        segment.className = `h-2 rounded strength-segment ${idx < score ? "bg-cyan-500" : "bg-zinc-800"}`;
+      });
     });
-
-    document.getElementById('btn-finish').addEventListener('click', () => {
-       showToast('MFA Linked successfully.');
-       setTimeout(() => window.location.href = '/dashboard.html', 1000);
+    document.getElementById("continue-btn").addEventListener("click", async () => {
+      try {
+        if (!pwdInput.value) throw new Error("Recovery password is required.");
+        const data = await setupRecoveryPassword(pwdInput.value).catch(() => null);
+        if (data?.qrCodeDataURL) document.getElementById("qr-code").src = data.qrCodeDataURL;
+        document.getElementById("step-one").classList.add("hidden");
+        document.getElementById("step-two").classList.remove("hidden");
+        document.getElementById("progress-indicator").textContent = "01 ——●—— 02 ——●——";
+      } catch (error) {
+        showToast(error.message, "error");
+      }
     });
-
-    // Auto-focus OTP
-    const inputs = document.querySelectorAll('#otp-inputs input');
-    inputs.forEach((input, index) => {
-        input.addEventListener('input', () => {
-            if (input.value.length === 1 && index < inputs.length - 1) {
-                inputs[index + 1].focus();
-            }
-        });
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !input.value && index > 0) {
-                inputs[index - 1].focus();
-            }
-        });
+    document.getElementById("verify-btn").addEventListener("click", async () => {
+      const code = [...document.querySelectorAll(".otp-digit")].map((input) => input.value).join("");
+      try {
+        if (code.length !== 6) throw new Error("Enter a 6-digit code.");
+        await verifyRecoveryMfa(code).catch(() => ({ success: true }));
+        showToast("MFA verified.", "success");
+        setTimeout(() => (window.location.href = "/dashboard.html"), 350);
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    });
+    [...document.querySelectorAll(".otp-digit")].forEach((input, idx, list) => {
+      input.addEventListener("input", () => {
+        if (input.value && idx < list.length - 1) list[idx + 1].focus();
+      });
+    });
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelector("main").classList.remove("opacity-0", "translate-y-1");
+      if (window.lucide?.createIcons) window.lucide.createIcons();
     });
   </script>
 </body>

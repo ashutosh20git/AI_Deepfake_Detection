@@ -3,21 +3,15 @@ import bcrypt from 'bcrypt';
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import jwt from 'jsonwebtoken';
-import rateLimit from 'express-rate-limit';
 import prisma from '../utils/db.js';
 import { verifyCaptcha } from '../services/captcha.js';
 import { firebaseAuth } from '../services/firebaseAdmin.js';
-import { log as auditLog } from '../services/auditLog.js';
+import { logEvent, AUDIT_ACTIONS } from '../services/auditLog.js';
 import { requireAuth } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
+import { authLimiter } from '../middleware/rateLimits.js';
 
 const router = express.Router();
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: 'Too many requests from this IP, please try again after 15 minutes' }
-});
 
 router.use(authLimiter);
 
@@ -45,13 +39,18 @@ router.post('/sync', async (req, res, next) => {
     
     if (!email) return res.status(400).json({ error: 'Token missing email' });
 
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
     const user = await prisma.user.upsert({
       where: { email },
       update: { firebaseUid: uid },
       create: { email, firebaseUid: uid, role: 'ANALYST' }
     });
 
-    await auditLog('SYNC', user.id, { method: 'firebase' }, req);
+    if (!existingUser) {
+      await logEvent(req, AUDIT_ACTIONS.REGISTER, { userId: user.id, method: 'firebase' });
+    }
+    await logEvent(req, AUDIT_ACTIONS.LOGIN_FIREBASE, { userId: user.id });
 
     res.json({ id: user.id, email: user.email, role: user.role });
   } catch (error) {
@@ -83,7 +82,7 @@ router.post('/offline/setup-recovery', requireAuth, async (req, res, next) => {
 
     const qrCodeDataURL = await QRCode.toDataURL(secret.otpauth_url);
 
-    await auditLog('MFA_SETUP', req.user.id, {}, req);
+    await logEvent(req, AUDIT_ACTIONS.MFA_SETUP, {});
 
     res.json({ qrCodeDataURL });
   } catch (error) {
@@ -112,7 +111,7 @@ router.post('/offline/verify-recovery-mfa', requireAuth, async (req, res, next) 
       data: { offlineMfaEnabled: true }
     });
 
-    await auditLog('MFA_VERIFY', req.user.id, {}, req);
+    await logEvent(req, AUDIT_ACTIONS.MFA_VERIFY, {});
 
     res.json({ success: true });
   } catch (error) {
@@ -159,7 +158,8 @@ router.post('/offline/login', async (req, res, next) => {
       { expiresIn: '24h' }
     );
 
-    await auditLog('LOGIN', user.id, { method: 'offline' }, req);
+    req.user = user;
+    await logEvent(req, AUDIT_ACTIONS.LOGIN_OFFLINE, { method: 'offline' });
 
     res.json({
       token,
@@ -169,6 +169,11 @@ router.post('/offline/login', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+router.post('/logout', requireAuth, async (req, res) => {
+  await logEvent(req, AUDIT_ACTIONS.LOGOUT, {});
+  res.json({ ok: true });
 });
 
 export default router;

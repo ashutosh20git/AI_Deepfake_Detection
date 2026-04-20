@@ -9,33 +9,41 @@ export function formatDate(dateString) {
   }).format(d);
 }
 
-export function animateValue(targetElement, start, end, duration) {
+export function NumberCounter(targetElement, end, suffix = "%", duration = 500) {
+  const start = 0;
   let startTimestamp = null;
-  const step = (timestamp) => {
+  const tick = (timestamp) => {
     if (!startTimestamp) startTimestamp = timestamp;
     const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    
-    // EaseOutQuart
-    const easeProgress = 1 - Math.pow(1 - progress, 4);
-    
-    // We compute the current value
-    const currentVal = (easeProgress * (end - start) + start).toFixed(1);
-    targetElement.innerHTML = `${currentVal}%`;
-    
-    if (progress < 1) {
-      window.requestAnimationFrame(step);
-    } else {
-      targetElement.innerHTML = `${end.toFixed(1)}%`;
-    }
+    const eased = 1 - Math.pow(1 - progress, 4); // easeOutQuart
+    const value = start + (end - start) * eased;
+    targetElement.textContent = `${value.toFixed(1)}${suffix}`;
+    if (progress < 1) requestAnimationFrame(tick);
   };
-  window.requestAnimationFrame(step);
+  requestAnimationFrame(tick);
 }
 
-// Utility to mount pages with fade effect
 export function mountPage(callback) {
   document.addEventListener('DOMContentLoaded', () => {
-    const main = document.querySelector('main');
-    if (main) main.classList.add('page-mount');
+    const main = document.querySelector("main");
+    if (main) {
+      main.classList.add("opacity-0", "translate-y-1", "transition-all", "duration-200");
+      requestAnimationFrame(() => {
+        main.classList.remove("opacity-0", "translate-y-1");
+      });
+    }
     if (callback) callback();
   });
+}
+
+export function formatPercent(value, digits = 1) {
+  return `${(Number(value || 0) * 100).toFixed(digits)}%`;
+}
+
+export function bytesToSize(bytes) {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.floor(Math.log(bytes) / Math.log(1024));
+  const size = bytes / 1024 ** index;
+  return `${size.toFixed(index > 1 ? 1 : 0)} ${units[index]}`;
 }

@@ -1,18 +1,9 @@
-const OFFLINE_MODE = window.ENV?.OFFLINE_MODE === 'true';
+export const OFFLINE_MODE = String(window.ENV?.OFFLINE_MODE || "false") === "true";
 
-let auth = null;
-let signInWithEmailAndPassword = null;
-let createUserWithEmailAndPassword = null;
-let getIdToken = null;
-
-if (!OFFLINE_MODE) {
-  // Try to load Firebase natively if loaded in head
-  const checkFirebase = setInterval(() => {
-    if (window.firebase) {
-      clearInterval(checkFirebase);
-      console.log('Firebase SDK loaded globally, ready for bindings if needed.');
-    }
-  }, 100);
-}
-
-export { OFFLINE_MODE };
+export const firebasePublicConfig = {
+  apiKey: window.ENV?.FIREBASE_API_KEY || "",
+  authDomain: window.ENV?.FIREBASE_AUTH_DOMAIN || "",
+  projectId: window.ENV?.FIREBASE_PROJECT_ID || "",
+  appId: window.ENV?.FIREBASE_APP_ID || "",
+  messagingSenderId: window.ENV?.FIREBASE_MESSAGING_SENDER_ID || "",
+};

@@ -1,18 +1,12 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { generateReply, generateAnalysisExplanation } from '../services/geminiService.js';
 import prisma from '../utils/db.js';
 import logger from '../utils/logger.js';
+import { chatLimiter } from '../middleware/rateLimits.js';
+import { logEvent, AUDIT_ACTIONS } from '../services/auditLog.js';
 
 const router = express.Router();
-
-const chatLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 30, // Limit each user to 30 requests per hour
-  keyGenerator: (req) => req.user.id,
-  message: { error: 'Too many chat requests from this user, please try again after an hour' }
-});
 
 router.post('/chat', requireAuth, chatLimiter, async (req, res) => {
   const { message, sessionId } = req.body;
@@ -81,6 +75,11 @@ router.post('/chat', requireAuth, chatLimiter, async (req, res) => {
         role: 'model',
         content: replyText
       }
+    });
+
+    await logEvent(req, AUDIT_ACTIONS.CHAT_MESSAGE, {
+      sessionId: currentSessionId,
+      promptLength: message.length,
     });
 
     res.json({ sessionId: currentSessionId, reply: replyText });
@@ -168,6 +167,10 @@ router.post('/explain-analysis/:analysisId', requireAuth, async (req, res) => {
     }
 
     const explanation = await generateAnalysisExplanation(analysis);
+    await logEvent(req, AUDIT_ACTIONS.EXPLAIN_REQUESTED, {
+      analysisId: analysis.id,
+      riskLevel: analysis.riskLevel,
+    });
     res.json({ explanation });
   } catch (error) {
      logger.error(`Error in explain-analysis: ${error.message}`);
